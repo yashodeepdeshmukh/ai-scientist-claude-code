@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+templates/*/run_*/
+templates/*/*.png
+templates/*/latex/*.aux
+templates/*/latex/*.log
+templates/*/latex/*.pdf
+templates/*/latex/*.bbl
+templates/*/latex/*.blg
+templates/*/latex/references.bib

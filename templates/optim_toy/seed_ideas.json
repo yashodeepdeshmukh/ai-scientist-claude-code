@@ -1,0 +1,18 @@
+[
+    {
+        "Name": "learning_rate_warmup",
+        "Title": "Does Linear Learning-Rate Warmup Help Small Networks Escape Early Plateaus?",
+        "Experiment": "Add a linear warmup schedule to the SGD optimiser (warmup length as a fraction of total steps), sweep warmup fractions {0, 0.05, 0.1, 0.2} at a higher peak learning rate, and compare steps to target accuracy and final loss against the constant-rate baseline.",
+        "Interestingness": 5,
+        "Feasibility": 9,
+        "Novelty": 3
+    },
+    {
+        "Name": "gradient_noise_injection",
+        "Title": "Annealed Gradient Noise as an Implicit Regulariser for Tiny MLPs",
+        "Experiment": "Add zero-mean Gaussian noise with variance eta/(1+t)^gamma to each gradient before the SGD step. Sweep eta and gamma, and measure test accuracy and convergence speed against the baseline on both datasets.",
+        "Interestingness": 6,
+        "Feasibility": 9,
+        "Novelty": 4
+    }
+]

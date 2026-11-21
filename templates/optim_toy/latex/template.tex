@@ -1,0 +1,82 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\graphicspath{{../}{./}}
+
+\begin{filecontents}[overwrite]{references.bib}
+@article{robbins1951stochastic,
+  title = {A Stochastic Approximation Method},
+  author = {Robbins, Herbert and Monro, Sutton},
+  journal = {The Annals of Mathematical Statistics},
+  volume = {22},
+  number = {3},
+  pages = {400--407},
+  year = {1951}
+}
+
+@article{kingma2014adam,
+  title = {Adam: A Method for Stochastic Optimization},
+  author = {Kingma, Diederik P. and Ba, Jimmy},
+  journal = {arXiv preprint arXiv:1412.6980},
+  year = {2014}
+}
+
+@book{goodfellow2016deep,
+  title = {Deep Learning},
+  author = {Goodfellow, Ian and Bengio, Yoshua and Courville, Aaron},
+  publisher = {MIT Press},
+  year = {2016}
+}
+\end{filecontents}
+
+\title{TITLE HERE}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+ABSTRACT HERE
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+INTRO HERE
+
+\section{Related Work}
+\label{sec:related}
+RELATED WORK HERE
+
+\section{Background}
+\label{sec:background}
+BACKGROUND HERE
+
+\section{Method}
+\label{sec:method}
+METHOD HERE
+
+\section{Experimental Setup}
+\label{sec:experimental}
+EXPERIMENTAL SETUP HERE
+
+\section{Results}
+\label{sec:results}
+RESULTS HERE
+
+\section{Conclusions and Future Work}
+\label{sec:conclusion}
+CONCLUSIONS HERE
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

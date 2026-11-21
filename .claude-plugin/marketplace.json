@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-scientist-local",
+  "description": "Local marketplace for the ai-scientist plugin.",
+  "owner": { "name": "yashodeepdeshmukh" },
+  "plugins": [
+    {
+      "name": "ai-scientist",
+      "description": "Automated research pipeline (ideas, novelty, experiments, paper, review) modelled on SakanaAI AI-Scientist.",
+      "source": "./",
+      "category": "research"
+    }
+  ]
+}
