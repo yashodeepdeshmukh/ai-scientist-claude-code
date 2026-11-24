@@ -1,6 +1,6 @@
 ---
 description: Run the full AI-Scientist pipeline on a template - generate ideas, check novelty, run experiments, write LaTeX papers, review them (optionally improve). Port of SakanaAI launch_scientist.py.
-argument-hint: <template-name-or-path> [--num-ideas 3] [--max-ideas 3] [--skip-idea-generation] [--skip-novelty-check] [--improvement] [--num-reviews 5] [--parallel] [--workspace ai_scientist] [focus text]
+argument-hint: <template-name-or-path> [--num-ideas 3] [--max-ideas 3] [--skip-idea-generation] [--skip-novelty-check] [--improvement] [--num-reviews 5] [--resume] [--parallel] [--workspace ai_scientist] [focus text]
 ---
 
 # AI-Scientist: full pipeline
@@ -26,6 +26,11 @@ python3 "$SCRIPTS/init_workspace.py" <template> --workspace <workspace>
 Keep `SCRIPTS`, `EXP_DIR`, and the baseline from the JSON output. Show the baseline to the user.
 Append a dated entry for every stage to `EXP_DIR/log.md` (what ran, outcome).
 
+With --resume, skip stages 1–3. Run `python3 "$SCRIPTS/pipeline.py" EXP_DIR --num-reviews NUM_REVIEWS`
+with --improvement if requested. Proceed to stage 4 for work items whose stage is other than
+`complete`. Reuse the original --num-reviews value if supplied. If there are no working folders yet,
+skip idea generation and continue at novelty checking with the saved ideas and the supplied flags.
+
 ## 1. Idea generation (skip with --skip-idea-generation)
 
 Spawn one `ai-scientist:idea-generator` agent with SCRIPTS, EXP_DIR, NUM_IDEAS, NUM_REFLECTIONS=3, focus text.
@@ -46,26 +51,33 @@ Selection can include unchecked ideas only when explicitly requested. A recorded
 excludes the idea. Report each selected idea's novelty verdict or unchecked status. If the selection
 is empty, report the completed and inconclusive novelty checks and stop.
 
-## 4. Per idea: experiments, write-up, review
+## 4. Per idea
 
-For each selected idea (sequentially; with --parallel, run the experimenter agents for all ideas in one message):
+For a new selection, initialize every selected folder with
+`python3 "$SCRIPTS/init_idea.py" EXP_DIR NAME --resume` before spawning any experimenters. For each
+idea, call `python3 "$SCRIPTS/pipeline.py" EXP_DIR --idea NAME --num-reviews NUM_REVIEWS`. Pass
+--improvement if requested. Use the plan's idea_dir and execute only the indicated stage.
+Run ideas sequentially by default. With --parallel, experimenters for different ideas may run together.
+After each successful stage, save the status immediately, then call the planner again. If a stage fails
+or the next plan still reports the same stage, log its outcome and continue with the next idea.
+Retry failed stages on the next --resume invocation.
 
-1. `IDEA_DIR=$(python3 $SCRIPTS/init_idea.py EXP_DIR <Name> --resume)`
-2. Spawn `ai-scientist:experimenter` with SCRIPTS, IDEA_DIR.
-   Set status with `ideas.py set ... status '"experiments_done"'` or `'"experiments_failed"'`.
-   Skip write-up and review when experiments fail.
-3. Spawn `ai-scientist:paper-writer` with SCRIPTS and IDEA_DIR. Set `writeup_done` after a successful
-   PDF build. If the build fails, set `writeup_failed` and skip review.
-4. Create a fresh review directory under IDEA_DIR. Spawn num-reviews `ai-scientist:paper-reviewer`
-   agents with PAPER=`IDEA_DIR/<Name>.pdf`, OUT=`REVIEW_DIR/review_<k>.json`, NUM_REFLECTIONS=5, REVIEWER_ID k, and
-   different PERSONA values (soundness, novelty and related work, clarity, significance, reproducibility).
-   Then act as area chair: read all reviews, write a meta-review JSON (`Summary`, `Strengths`,
-   `Weaknesses`, `Questions`, `Limitations`) to `IDEA_DIR/meta_review.json`, and run
-   `python3 "$SCRIPTS/aggregate_reviews.py" <current reviewer output paths> --meta IDEA_DIR/meta_review.json --out IDEA_DIR/review.json`.
-   Aggregate the review files from this invocation only. Use the exact output paths sent to reviewers.
-   Write `IDEA_DIR/review.md` and set status `reviewed` after successful aggregation.
-5. With --improvement, spawn `ai-scientist:paper-writer` with REVIEW=`IDEA_DIR/review.json`. After a
-   successful build, review PAPER=`IDEA_DIR/<Name>_improved.pdf` with OUT=`IDEA_DIR/review_improved.json`.
+- `experiments`: Spawn `ai-scientist:experimenter` with SCRIPTS and IDEA_DIR. Use
+  `ideas.py set` to record status `experiments_done` or `experiments_failed`.
+- `writeup`: Spawn `ai-scientist:paper-writer` with SCRIPTS and IDEA_DIR. Record status `writeup_done`
+  after a successful PDF build. Record `writeup_failed` on failure.
+- `review`: Spawn `ai-scientist:paper-reviewer` only for reviewer slots with complete=false. Pass PDF
+  and each slot's out path and id, NUM_REFLECTIONS=5, and a persona based on the ID (soundness,
+  novelty and related work, clarity, significance, reproducibility, cycling if needed).
+  Refresh the plan and defer aggregation if any review is missing or invalid.
+  When every slot is complete, read all the reviews, write `IDEA_DIR/meta_review.json` (Summary,
+  Strengths, Weaknesses, Questions, Limitations), and run
+  `python3 "$SCRIPTS/aggregate_reviews.py" <all planned review paths> --meta IDEA_DIR/meta_review.json --out IDEA_DIR/review.json`.
+  Write `IDEA_DIR/review.md` and record status `reviewed` after successful aggregation.
+- `improvement`: Run `ai-scientist:paper-writer` with REVIEW=`IDEA_DIR/review.json`. Proceed after a
+  successful build.
+- `improved_review`: Review the planned improved PDF with OUT=`IDEA_DIR/review_improved.json`.
+- `complete`: Report the saved results.
 
 ## 5. Report
 

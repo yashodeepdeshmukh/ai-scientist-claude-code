@@ -36,14 +36,23 @@ def main():
     os.makedirs(results, exist_ok=True)
     with locked(os.path.join(exp_dir, "workspace")):
         if a.resume:
-            pattern = re.compile(r"\d{8}_\d{6}(?:_\d{6})?_" + re.escape(a.name))
-            matches = sorted(name for name in os.listdir(results) if pattern.fullmatch(name))
-            for name in reversed(matches):
-                candidate = os.path.join(results, name)
-                if os.path.isfile(os.path.join(candidate, "idea.json")):
-                    print(candidate)
-                    return
+            candidate = find_idea_folder(results, a.name)
+            if candidate:
+                print(candidate)
+                return
         print(create_idea_folder(exp_dir, results, idea))
+
+
+def find_idea_folder(results, name):
+    pattern = re.compile(r"\d{8}_\d{6}(?:_\d{6})?_" + re.escape(name))
+    if not os.path.isdir(results):
+        return None
+    for entry in sorted(os.listdir(results), reverse=True):
+        if pattern.fullmatch(entry):
+            candidate = os.path.join(results, entry)
+            if os.path.isfile(os.path.join(candidate, "idea.json")):
+                return candidate
+    return None
 
 
 def create_idea_folder(exp_dir, results, idea):

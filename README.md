@@ -55,7 +55,10 @@ Results land in `./ai_scientist/<template>/` in the current directory.
 ## Resuming and handling research data
 
 The full pipeline reuses the latest working folder for each selected idea. Completed runs keep their
-metrics and code snapshots. Use the stage commands to resume a write-up or review independently.
+metrics and code snapshots. Run `/ai-scientist:scientist <template> --resume` to continue started ideas
+from their first unfinished stage. Repeat the original workspace and review options if customized.
+The review stage reuses validated reviewer files for the same PDF and retries missing or invalid files.
+Use the individual stage commands to work on a single idea.
 `--skip-novelty-check` permits unchecked ideas while preserving existing verdicts.
 
 Experiment and plot subprocesses receive a temporary home and a limited environment. Their raw output
