@@ -10,7 +10,7 @@
     {
         "Name": "gradient_noise_injection",
         "Title": "Annealed Gradient Noise as an Implicit Regulariser for Tiny MLPs",
-        "Experiment": "Add zero-mean Gaussian noise with variance eta/(1+t)^gamma to each gradient before the SGD step. Sweep eta and gamma, and measure test accuracy and convergence speed against the baseline on both datasets.",
+        "Experiment": "Add zero-mean Gaussian noise with variance eta/(1+t)^gamma to each gradient before the SGD step. Sweep eta and gamma, and measure validation accuracy and convergence speed against the baseline on both datasets.",
         "Interestingness": 6,
         "Feasibility": 9,
         "Novelty": 4

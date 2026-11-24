@@ -9,6 +9,7 @@ from aggregate_reviews import LISTS, NUMERIC
 from common import read_means
 from ideas import load
 from init_idea import find_idea_folder
+from verify_benchmark import current_report, evaluator_for, pdf_matches_report
 
 EXPERIMENT_STATUSES = {"experiments_done", "writeup_failed", "writeup_done", "reviewed"}
 PAPER_STATUSES = {"writeup_done", "reviewed"}
@@ -75,8 +76,13 @@ def next_stage(idea, folder, num_reviews, improvement):
     if status not in EXPERIMENT_STATUSES or not has_experiment(folder):
         return dict(work, stage="experiments")
 
+    evaluator = evaluator_for(folder)
+    if evaluator and not current_report(folder, evaluator):
+        return dict(work, stage="verify")
+
     pdf = folder / f"{idea['Name']}.pdf"
-    if status not in PAPER_STATUSES or not pdf.is_file() or not pdf.stat().st_size:
+    if (status not in PAPER_STATUSES or not pdf.is_file() or not pdf.stat().st_size
+            or (evaluator and not pdf_matches_report(folder, pdf))):
         return dict(work, stage="writeup")
 
     aggregate = read_review(folder / "review.json")
@@ -85,10 +91,16 @@ def next_stage(idea, folder, num_reviews, improvement):
 
     if improvement:
         improved = folder / f"{idea['Name']}_improved.pdf"
-        if not improved.is_file() or not improved.stat().st_size:
+        if (not improved.is_file() or not improved.stat().st_size
+                or (evaluator and not pdf_matches_report(folder, improved))):
             return dict(work, stage="improvement")
-        if not valid_review(folder / "review_improved.json"):
-            return dict(work, stage="improved_review", pdf=str(improved))
+        improved_out = folder / "review_improved.json"
+        if evaluator:
+            slot = review_slots(improved, 1)[0]
+            if not slot["complete"]:
+                return dict(work, stage="improved_review", pdf=str(improved), out=slot["out"])
+        elif not valid_review(improved_out):
+            return dict(work, stage="improved_review", pdf=str(improved), out=str(improved_out))
     return dict(work, stage="complete")
 
 

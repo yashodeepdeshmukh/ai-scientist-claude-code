@@ -4,10 +4,12 @@ import argparse
 import datetime
 import json
 import os
+from pathlib import Path
 import shutil
 import sys
 
 from common import locked, process_failure, read_means, run_cmd
+from verify_benchmark import evaluator_for
 
 MAX_RUNS = 5
 
@@ -16,6 +18,7 @@ def run_experiment(idea_dir, run_num, timeout):
     run_name = f"run_{run_num}"
     out = os.path.join(idea_dir, run_name)
     snapshot = os.path.join(idea_dir, f"{run_name}.py")
+    needs_checkpoint = evaluator_for(Path(idea_dir).resolve()) is not None
     with locked(os.path.join(idea_dir, "runs")):
         if os.path.exists(out):
             try:
@@ -25,6 +28,8 @@ def run_experiment(idea_dir, run_num, timeout):
             else:
                 if not os.path.isfile(snapshot):
                     raise SystemExit(f"{run_name} has metrics but no code snapshot. Inspect the existing run.")
+                if needs_checkpoint and not os.path.isfile(os.path.join(out, "checkpoint.npz")):
+                    raise SystemExit(f"{run_name} has no checkpoint. Preserve it and use a new run number.")
                 print(f"Run {run_num} already completed.\nResults: {json.dumps(means, indent=2)}")
                 return True
 
@@ -34,6 +39,8 @@ def run_experiment(idea_dir, run_num, timeout):
         record = {"run": run_num, "time": datetime.datetime.now().isoformat(timespec="seconds")}
         if code:
             record["error"] = process_failure(code, timeout)
+        elif needs_checkpoint and not os.path.isfile(os.path.join(out, "checkpoint.npz")):
+            record["error"] = "Missing checkpoint.npz"
         else:
             try:
                 record["means"] = read_means(out)

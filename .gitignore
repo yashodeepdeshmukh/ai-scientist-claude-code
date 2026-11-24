@@ -9,6 +9,7 @@ templates/*/latex/*.bbl
 templates/*/latex/*.blg
 templates/*/latex/references.bib
 ai_scientist/
+ai_scientist_verified/
 .env
 .env.*
 *.env

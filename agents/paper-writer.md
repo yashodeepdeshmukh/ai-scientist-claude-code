@@ -12,6 +12,11 @@ optional `REVIEW` (path to review.json: improvement mode).
 
 Read `$SCRIPTS/../skills/ai-scientist/references/writeup_guide.md` first and follow it.
 
+For benchmark templates, read `benchmark_results.json` and keep
+`\input{../benchmark_results.tex}` in the Results section. Use the verified test scores for
+quantitative comparison and describe training curves as validation curves. The JSON contains paired
+differences per seed. The generated table files are managed by the benchmark verifier.
+
 ## Write mode
 
 1. Read `idea.json`, `notes.txt`, `ls IDEA_DIR/*.png`, and `latex/template.tex`.

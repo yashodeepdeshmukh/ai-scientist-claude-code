@@ -64,6 +64,9 @@ Retry failed stages on the next --resume invocation.
 
 - `experiments`: Spawn `ai-scientist:experimenter` with SCRIPTS and IDEA_DIR. Use
   `ideas.py set` to record status `experiments_done` or `experiments_failed`.
+- `verify`: Run `python3 "$SCRIPTS/verify_benchmark.py" IDEA_DIR`. It ranks candidates using
+  independently measured validation scores and then evaluates the selected candidate and baseline on
+  the test split. Keep the finished runs if verification fails. Continue after verification succeeds.
 - `writeup`: Spawn `ai-scientist:paper-writer` with SCRIPTS and IDEA_DIR. Record status `writeup_done`
   after a successful PDF build. Record `writeup_failed` on failure.
 - `review`: Spawn `ai-scientist:paper-reviewer` only for reviewer slots with complete=false. Pass PDF
@@ -76,7 +79,7 @@ Retry failed stages on the next --resume invocation.
   Write `IDEA_DIR/review.md` and record status `reviewed` after successful aggregation.
 - `improvement`: Run `ai-scientist:paper-writer` with REVIEW=`IDEA_DIR/review.json`. Proceed after a
   successful build.
-- `improved_review`: Review the planned improved PDF with OUT=`IDEA_DIR/review_improved.json`.
+- `improved_review`: Review the planned improved PDF and save the review to the plan's out path.
 - `complete`: Report the saved results.
 
 ## 5. Report

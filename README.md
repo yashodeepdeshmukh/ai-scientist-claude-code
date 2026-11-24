@@ -52,6 +52,20 @@ Results land in `./ai_scientist/<template>/` in the current directory.
 - Review is done by Claude reading the PDF, not a hard-coded GPT-4o reviewer.
 - Defaults are smaller (3 ideas, not 50).
 
+## Verified benchmarks
+
+New `optim_toy` workspaces independently rescore the final model checkpoints. The evaluator ranks
+candidates using fixed validation data, then evaluates the selected candidate and SGD baseline on a
+separate test split. The paper includes a generated comparison table. Run verification independently
+with `python3 scripts/verify_benchmark.py <idea-folder>`, or let the full pipeline run it before
+write-up. Resume reuses a current score and refreshes it when the evaluator or checkpoints change.
+
+`benchmark_results.json` contains checkpoint and evaluator hashes, per-seed accuracy and paired
+test differences. The evaluator and checkpoints remain locally accessible to generated code.
+This benchmark supports reproducible scoring. A blind holdout requires a separate execution sandbox.
+Existing workspaces keep their copied template. To try the benchmark with an older workspace, start a
+fresh one using `--workspace ai_scientist_verified`.
+
 ## Resuming and handling research data
 
 The full pipeline reuses the latest working folder for each selected idea. Completed runs keep their

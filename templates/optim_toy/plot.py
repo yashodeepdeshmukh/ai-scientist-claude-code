@@ -2,8 +2,9 @@
 
 Only runs in `labels` are plotted, in the given order. The experimenter edits this dict
 to include each meaningful run_i with a descriptive legend name.
-Figures are written to the current folder: test_acc_<dataset>.png, train_loss_<dataset>.png
+Figures are written to the current folder: validation_acc_<dataset>.png, train_loss_<dataset>.png
 """
+import json
 import os
 
 import matplotlib
@@ -18,18 +19,21 @@ labels = {
 
 
 def load(run):
-    path = os.path.join(run, "all_results.npy")
-    return np.load(path, allow_pickle=True).item() if os.path.exists(path) else None
+    path = os.path.join(run, "all_results.json")
+    if not os.path.exists(path):
+        return None
+    with open(path) as file:
+        return json.load(file)
 
 
 def main():
     runs = {r: load(r) for r in labels}
     runs = {r: v for r, v in runs.items() if v is not None}
     if not runs:
-        raise SystemExit("No run folders with all_results.npy found")
+        raise SystemExit("No run folders with all_results.json found")
     datasets = list(next(iter(runs.values())).keys())
     cmap = plt.get_cmap("tab10")
-    for metric, ylabel in (("test_acc", "Test accuracy"), ("train_loss", "Train loss")):
+    for metric, ylabel in (("validation_acc", "Validation accuracy"), ("train_loss", "Train loss")):
         for ds in datasets:
             plt.figure(figsize=(6, 4))
             for i, (run, res) in enumerate(runs.items()):

@@ -51,8 +51,9 @@ def main():
         if not args.rerun_baseline:
             try:
                 baseline = read_means(run0)
+                check_checkpoint(tdir, run0)
             except (OSError, ValueError):
-                pass
+                baseline = None
         if baseline is None:
             baseline = run_baseline(tdir, run0, args.timeout)
 
@@ -77,6 +78,12 @@ def check_template(tdir):
             raise SystemExit(f"Template is missing required file: {required}")
 
 
+def check_checkpoint(tdir, run0):
+    if os.path.isfile(os.path.join(tdir, "benchmark_evaluator.py")):
+        if not os.path.isfile(os.path.join(run0, "checkpoint.npz")):
+            raise FileNotFoundError("Baseline did not write checkpoint.npz")
+
+
 def run_baseline(tdir, run0, timeout):
     print("Running baseline: python experiment.py --out_dir=run_0", file=sys.stderr)
     with tempfile.TemporaryDirectory(dir=tdir) as staging:
@@ -90,6 +97,11 @@ def run_baseline(tdir, run0, timeout):
                 raise SystemExit(f"Baseline failed. {process_failure(code, timeout)}.")
             try:
                 baseline = read_means(run0)
+                check_checkpoint(tdir, run0)
+            except FileNotFoundError as error:
+                if error.filename:
+                    raise SystemExit("Baseline failed. Missing final_info.json.") from None
+                raise SystemExit(f"Baseline failed. {error}.") from None
             except (OSError, ValueError):
                 raise SystemExit("Baseline failed. Missing or invalid final_info.json.") from None
         except BaseException:

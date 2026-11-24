@@ -4,7 +4,8 @@
 Contract (AI-Scientist template):
   python experiment.py --out_dir=run_i
 writes run_i/final_info.json  ->  {dataset: {"means": {...}, "stds": {...}}}
-and    run_i/all_results.npy  ->  per-dataset, per-seed training curves for plot.py
+and    run_i/all_results.json  ->  per-dataset, per-seed training curves for plot.py
+and    run_i/checkpoint.npz   ->  final weights for independent evaluation
 """
 import argparse
 import json
@@ -14,28 +15,7 @@ import time
 import numpy as np
 
 
-# ----------------------------------------------------------------------------- data
-def make_moons(n, noise, rng):
-    n1 = n // 2
-    t1 = rng.uniform(0, np.pi, n1)
-    t2 = rng.uniform(0, np.pi, n - n1)
-    a = np.stack([np.cos(t1), np.sin(t1)], 1)
-    b = np.stack([1 - np.cos(t2), 0.5 - np.sin(t2)], 1)
-    X = np.concatenate([a, b]) + rng.normal(0, noise, (n, 2))
-    y = np.concatenate([np.zeros(n1, int), np.ones(n - n1, int)])
-    return X, y
-
-
-def make_circles(n, noise, rng, factor=0.5):
-    n1 = n // 2
-    t = rng.uniform(0, 2 * np.pi, n)
-    r = np.concatenate([np.ones(n1), factor * np.ones(n - n1)])
-    X = np.stack([r * np.cos(t), r * np.sin(t)], 1) + rng.normal(0, noise, (n, 2))
-    y = np.concatenate([np.zeros(n1, int), np.ones(n - n1, int)])
-    return X, y
-
-
-DATASETS = {"moons": make_moons, "circles": make_circles}
+from benchmark_evaluator import BATCH_SIZE, DATASETS, HIDDEN, SEEDS, STEPS, split_data
 
 
 # ----------------------------------------------------------------------------- model
@@ -88,14 +68,12 @@ class SGD:
 # ----------------------------------------------------------------------------- training
 def train(dataset, seed, cfg):
     rng = np.random.default_rng(seed)
-    X, y = DATASETS[dataset](cfg["n_train"] + cfg["n_test"], cfg["noise"], rng)
-    idx = rng.permutation(len(y))
-    tr, te = idx[: cfg["n_train"]], idx[cfg["n_train"]:]
-    Xtr, ytr, Xte, yte = X[tr], y[tr], X[te], y[te]
+    Xtr, ytr = split_data(dataset, seed, "train")
+    Xva, yva = split_data(dataset, seed, "validation")
 
-    model = MLP(2, cfg["hidden"], 2, rng)
+    model = MLP(2, HIDDEN, 2, rng)
     opt = SGD(cfg["lr"])
-    log = {"step": [], "train_loss": [], "test_acc": []}
+    log = {"step": [], "train_loss": [], "validation_acc": []}
     steps_to_target = cfg["steps"]
     t0 = time.time()
     for t in range(1, cfg["steps"] + 1):
@@ -104,19 +82,19 @@ def train(dataset, seed, cfg):
         opt.step(model.params, grads, t)
         if t % cfg["eval_every"] == 0 or t == cfg["steps"]:
             loss, _ = model.loss_and_grads(Xtr, ytr)
-            acc = model.accuracy(Xte, yte)
+            acc = model.accuracy(Xva, yva)
             log["step"].append(t)
             log["train_loss"].append(float(loss))
-            log["test_acc"].append(acc)
+            log["validation_acc"].append(acc)
             if acc >= cfg["target_acc"] and steps_to_target == cfg["steps"]:
                 steps_to_target = t
     final = {
         "final_train_loss": log["train_loss"][-1],
-        "final_test_acc": log["test_acc"][-1],
+        "final_validation_acc": log["validation_acc"][-1],
         "steps_to_target_acc": steps_to_target,
         "train_time_s": time.time() - t0,
     }
-    return final, log
+    return final, log, model.params
 
 
 def main():
@@ -125,15 +103,15 @@ def main():
     args = ap.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
 
-    cfg = dict(n_train=800, n_test=400, noise=0.15, hidden=32, lr=0.1, batch_size=32,
-               steps=3000, eval_every=50, target_acc=0.95)
-    seeds = [0, 1, 2]
+    cfg = dict(lr=0.1, batch_size=BATCH_SIZE, steps=STEPS,
+               eval_every=50, target_acc=0.95)
 
-    final_info, all_results = {}, {}
+    final_info, all_results, checkpoints = {}, {}, {}
     for ds in DATASETS:
         finals, logs = [], []
-        for s in seeds:
-            f, log = train(ds, s, cfg)
+        for s in SEEDS:
+            f, log, params = train(ds, s, cfg)
+            checkpoints.update({f"{ds}_{s}_{key}": value for key, value in params.items()})
             finals.append(f)
             logs.append(log)
         keys = finals[0].keys()
@@ -145,7 +123,9 @@ def main():
 
     with open(os.path.join(args.out_dir, "final_info.json"), "w") as f:
         json.dump(final_info, f, indent=2)
-    np.save(os.path.join(args.out_dir, "all_results.npy"), all_results, allow_pickle=True)
+    np.savez(os.path.join(args.out_dir, "checkpoint.npz"), **checkpoints)
+    with open(os.path.join(args.out_dir, "all_results.json"), "w") as f:
+        json.dump(all_results, f)
 
 
 if __name__ == "__main__":

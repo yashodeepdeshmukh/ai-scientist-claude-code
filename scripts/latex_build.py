@@ -12,6 +12,7 @@ Then compiles: pdflatex, bibtex, pdflatex, pdflatex -> <idea_dir>/<name>.pdf
 Prints a JSON report. Exit 1 if compilation fails.
 """
 import argparse
+from pathlib import Path
 import json
 import os
 import re
@@ -20,6 +21,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import process_failure, run_cmd  # noqa: E402
+from verify_benchmark import REPORT, TABLE_INPUT, current_report, digest, evaluator_for, record_pdf
 
 BIB_RE = re.compile(r"\\begin\{filecontents\*?\}(?:\[[^\]]*\])?\{references\.bib\}(.*?)\\end\{filecontents\*?\}", re.S)
 CITE_RE = re.compile(r"\\cite[pt]?\*?(?:\[[^\]]*\])*\{([^}]*)\}")
@@ -79,6 +81,17 @@ def main():
     issues, cited, figs = check(tex, latex_dir, idea_dir)
     report = {"issues": issues, "citations": cited, "figures": figs}
 
+    folder = Path(idea_dir).resolve()
+    evaluator = evaluator_for(folder)
+    verification_hash = None
+    if evaluator:
+        if not current_report(folder, evaluator):
+            issues.append("Run verify_benchmark.py for this idea before building the paper.")
+        else:
+            verification_hash = digest(folder / REPORT)
+        if TABLE_INPUT not in strip_comments(tex):
+            issues.append(f"Include the verified results table with {TABLE_INPUT}.")
+
     if shutil.which("chktex"):
         _, out, _ = run_cmd(["chktex", "-q", "-n2", "-n24", "-n13", "-n1", "template.tex"], latex_dir, 60)
         report["chktex"] = out.strip()[-3000:]
@@ -88,6 +101,11 @@ def main():
     if a.check_only:
         print(json.dumps(report, indent=2))
         return
+
+    if evaluator and (not verification_hash or TABLE_INPUT not in strip_comments(tex)):
+        report["pdf"] = None
+        print(json.dumps(report, indent=2))
+        sys.exit(1)
 
     name = a.name
     if not name:
@@ -122,8 +140,14 @@ def main():
     report["undefined_refs"] = sorted(set(re.findall(r"(?:Citation|Reference) `([^']+)' .*undefined", out)))
     report["pdf"] = None
     if os.path.isfile(pdf) and not report["undefined_refs"]:
+        if evaluator and (not current_report(folder, evaluator) or digest(folder / REPORT) != verification_hash):
+            report["issues"].append("Benchmark evidence changed during the build. Retry the build.")
+            print(json.dumps(report, indent=2))
+            sys.exit(1)
         dest = os.path.join(idea_dir, f"{name}.pdf")
         shutil.copy(pdf, dest)
+        if evaluator:
+            record_pdf(Path(dest), verification_hash)
         report["pdf"] = dest
     print(json.dumps(report, indent=2))
     sys.exit(0 if report["pdf"] else 1)

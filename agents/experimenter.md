@@ -22,8 +22,7 @@ existing plan and update it with dated changes as needed.
 For each run n:
 1. Edit `experiment.py` to implement the next experiment. Keep the CLI to `--out_dir` only:
    hard-code this run's settings (the harness runs `python experiment.py --out_dir=run_n`).
-   Keep the `final_info.json` format `{dataset: {"means": {...}, ...}}` and the `all_results.npy` file
-   that `plot.py` reads. Record the planned change and comparison before running.
+   Keep the `final_info.json` format `{dataset: {"means": {...}, ...}}` and the training-curve format that `plot.py` reads. Record the planned change and comparison before running.
 2. Run `python3 $SCRIPTS/run_experiment.py IDEA_DIR n --max-runs MAX_RUNS`.
 3. On failure the harness reports the exit code or invalid metrics and removes incomplete output. Inspect
    the local code and retry the same run number. Keep secrets and personal data out of experiment artifacts.
@@ -52,6 +51,9 @@ For each run n:
 - Do not change the dataset, evaluation metric definitions or the seeds in a way that makes
   comparison with run_0 unfair, unless notes.txt states it and the baseline is re-measured in a run.
 - Work only inside IDEA_DIR. No network downloads.
+- For benchmark templates, preserve the checkpoint format, model shape, split configuration, seeds
+  and training budget. Use validation results during exploration. The orchestrator runs the final
+  benchmark after the candidate experiments finish.
 
 Report `experiments_done` when at least one experiment has valid metrics and all required plots are
 available. Report partial results and the reason for stopping if later attempts failed.

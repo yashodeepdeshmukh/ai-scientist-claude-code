@@ -51,6 +51,13 @@ A template directory must hold:
   and `\graphicspath{{../}{./}}` so figures in the idea folder resolve.
 
 Bundled template: `optim_toy` (numpy MLP + SGD on synthetic data, CPU, seconds per run).
+A workspace template can opt into accuracy benchmarking by supplying `benchmark_evaluator.py`. This trusted,
+self-contained evaluator accepts `<checkpoint.npz> --split validation|test` and emits a JSON object
+mapping each dataset to its accuracy by seed. Every completed run, including the baseline, must write
+`checkpoint.npz`. The verifier chooses the candidate by mean validation accuracy across datasets,
+breaking ties in favor of the earliest run. It records paired test scores and generates a LaTeX table.
+Add `\input{../benchmark_results.tex}` to the Results section. The full pipeline inserts verification
+before write-up and resumes it when any benchmark input changes.
 Use `/ai-scientist:new-template` to wrap your own code.
 
 ## Idea schema (ideas.json, identical to AI-Scientist)
