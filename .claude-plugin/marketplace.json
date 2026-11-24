@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ai-scientist-local",
   "description": "Local marketplace for the ai-scientist plugin.",
-  "owner": { "name": "yashodeepdeshmukh" },
+  "owner": { "name": "AI Scientist contributors" },
   "plugins": [
     {
       "name": "ai-scientist",

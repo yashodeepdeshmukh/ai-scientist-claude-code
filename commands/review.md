@@ -10,11 +10,11 @@ Load the `ai-scientist` skill. Resolve `SCRIPTS` as in `/ai-scientist:scientist`
 PAPER: the PDF given, or `<idea-folder>/<Name>.pdf` (Name from idea.json).
 OUT_DIR: the idea folder, or `<pdf dir>/<pdf stem>_review/` for a standalone PDF.
 
-1. Spawn num-reviews (default 5) `ai-scientist:paper-reviewer` agents in one message, each with
-   PAPER, OUT=`OUT_DIR/review_<k>.json`, NUM_REFLECTIONS, REVIEWER_ID k and a distinct PERSONA
+1. Create a fresh review directory under OUT_DIR. Spawn num-reviews (default 5) `ai-scientist:paper-reviewer` agents in one message, each with
+   PAPER, OUT=`REVIEW_DIR/review_<k>.json`, NUM_REFLECTIONS, REVIEWER_ID k and a distinct PERSONA
    (soundness, novelty and related work, clarity, significance, reproducibility).
 2. As area chair, read all reviews; write `OUT_DIR/meta_review.json` with Summary, Strengths,
    Weaknesses, Questions, Limitations.
-3. `python3 $SCRIPTS/aggregate_reviews.py OUT_DIR/review_[0-9]*.json --meta OUT_DIR/meta_review.json --out OUT_DIR/review.json`
+3. Run `python3 "$SCRIPTS/aggregate_reviews.py" <current reviewer output paths> --meta OUT_DIR/meta_review.json --out OUT_DIR/review.json`. Pass the exact paths from this invocation. Report missing or failed reviews.
 4. Write `OUT_DIR/review.md` (scores table, decision, strengths, weaknesses, questions).
    Show the user the scores table, the decision, and the top weaknesses.

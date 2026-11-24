@@ -7,7 +7,7 @@ Arguments: `$ARGUMENTS`
 
 Load the `ai-scientist` skill. Resolve `SCRIPTS` as in `/ai-scientist:scientist` step 0.
 
-- Given `<exp-dir> <IdeaName>`: `IDEA_DIR=$(python3 $SCRIPTS/init_idea.py <exp-dir> <IdeaName>)`.
+- Given `<exp-dir> <IdeaName>`: `IDEA_DIR=$(python3 $SCRIPTS/init_idea.py <exp-dir> <IdeaName> --resume)`.
 - Given an existing idea folder (has idea.json): resume there; tell the experimenter which run_n exist already.
 
 Warn in one line that the experiment executes model-written code locally.

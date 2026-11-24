@@ -28,12 +28,18 @@ OA_URL = "https://api.openalex.org/works"
 UA = {"User-Agent": "ai-scientist-claude-plugin/0.1"}
 
 
-def _get(url, headers, retries=6):
-    delay = 2.0
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _get(url, headers, retries=3):
+    opener = urllib.request.build_opener(NoRedirect())
+    delay = 1.0
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with opener.open(req, timeout=15) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
@@ -50,14 +56,13 @@ def _get(url, headers, retries=6):
     return {}
 
 
-def search_s2(query, limit, retries=6):
+def search_s2(query, limit):
     headers = dict(UA)
     key = os.environ.get("S2_API_KEY")
     if key:
         headers["X-API-KEY"] = key
     params = urllib.parse.urlencode({"query": query, "limit": limit, "fields": S2_FIELDS})
-    data = _get(f"{S2_URL}?{params}", headers, retries)
-    time.sleep(1.0)  # stay polite under the unauthenticated rate limit
+    data = _get(f"{S2_URL}?{params}", headers)
     out = []
     for p in data.get("data") or []:
         out.append({
@@ -137,14 +142,15 @@ def main():
     papers, errors = None, []
     for eng in engines:
         try:
-            retries = 3 if args.engine == "auto" and eng == "semanticscholar" else 6
-            papers = search_s2(args.query, args.limit, retries) if eng == "semanticscholar" \
+            papers = search_s2(args.query, args.limit) if eng == "semanticscholar" \
                 else search_openalex(args.query, args.limit)
             if len(engines) > 1 and eng != engines[0]:
                 print(f"(fell back to {eng}: {errors[-1]})", file=sys.stderr)
             break
-        except Exception as e:
-            errors.append(f"{eng}: {e}")
+        except urllib.error.HTTPError as error:
+            errors.append(f"{eng}: HTTP {error.code}")
+        except (OSError, ValueError, TypeError, AttributeError) as error:
+            errors.append(f"{eng}: {type(error).__name__}")
     if papers is None:
         print("SEARCH_ERROR " + "; ".join(errors), file=sys.stderr)
         sys.exit(2)

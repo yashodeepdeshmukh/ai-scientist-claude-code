@@ -19,7 +19,7 @@ import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import run_cmd  # noqa: E402
+from common import process_failure, run_cmd  # noqa: E402
 
 BIB_RE = re.compile(r"\\begin\{filecontents\*?\}(?:\[[^\]]*\])?\{references\.bib\}(.*?)\\end\{filecontents\*?\}", re.S)
 CITE_RE = re.compile(r"\\cite[pt]?\*?(?:\[[^\]]*\])*\{([^}]*)\}")
@@ -89,39 +89,44 @@ def main():
         print(json.dumps(report, indent=2))
         return
 
-    if not shutil.which("pdflatex"):
-        report["compile"] = "pdflatex not installed"
-        print(json.dumps(report, indent=2))
-        sys.exit(1)
-    log = []
-    for cmd in (["pdflatex", "-interaction=nonstopmode", "template.tex"], ["bibtex", "template"],
-                ["pdflatex", "-interaction=nonstopmode", "template.tex"],
-                ["pdflatex", "-interaction=nonstopmode", "template.tex"]):
-        code, out, err = run_cmd(cmd, latex_dir, a.timeout)
-        log.append({"cmd": " ".join(cmd), "code": code})
-    errors = re.findall(r"^! .*$", out, re.M)
-    undefined = sorted(set(re.findall(r"(?:Citation|Reference) `([^']+)' .*undefined", out)))
-    pdf = os.path.join(latex_dir, "template.pdf")
     name = a.name
     if not name:
         try:
             with open(os.path.join(idea_dir, "idea.json")) as f:
                 name = json.load(f)["Name"]
-        except Exception:
+        except (FileNotFoundError, KeyError):
             name = "paper"
-    report["compile_steps"] = log
-    report["latex_errors"] = errors[:20]
-    report["undefined_refs"] = undefined
-    if os.path.exists(pdf):
+    if not isinstance(name, str) or not re.fullmatch(r"[\w.-]+", name) or name in (".", ".."):
+        ap.error("Paper name must be a filename stem")
+
+    missing_tools = [tool for tool in ("pdflatex", "bibtex") if not shutil.which(tool)]
+    if missing_tools:
+        report["compile"] = "Missing tools: " + ", ".join(missing_tools)
+        print(json.dumps(report, indent=2))
+        sys.exit(1)
+
+    latex = ["pdflatex", "-no-shell-escape", "-halt-on-error", "-interaction=nonstopmode", "template.tex"]
+    report["compile_steps"] = []
+    pdf = os.path.join(latex_dir, "template.pdf")
+    if os.path.lexists(pdf):
+        os.unlink(pdf)
+    for cmd in (latex, ["bibtex", "template"], latex, latex):
+        code, out, _ = run_cmd(cmd, latex_dir, a.timeout)
+        report["compile_steps"].append({"cmd": " ".join(cmd), "code": code})
+        if code != 0:
+            report["pdf"] = None
+            report["compile"] = process_failure(code, a.timeout)
+            report["diagnostics"] = "See the local LaTeX or BibTeX build log."
+            print(json.dumps(report, indent=2))
+            sys.exit(1)
+    report["undefined_refs"] = sorted(set(re.findall(r"(?:Citation|Reference) `([^']+)' .*undefined", out)))
+    report["pdf"] = None
+    if os.path.isfile(pdf) and not report["undefined_refs"]:
         dest = os.path.join(idea_dir, f"{name}.pdf")
         shutil.copy(pdf, dest)
         report["pdf"] = dest
-        print(json.dumps(report, indent=2))
-    else:
-        report["pdf"] = None
-        report["log_tail"] = out[-2000:]
-        print(json.dumps(report, indent=2))
-        sys.exit(1)
+    print(json.dumps(report, indent=2))
+    sys.exit(0 if report["pdf"] else 1)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ EXP_DIR is the argument if it is a directory holding ideas.json, else `<workspac
 Ideas to check: `--idea Name` -> only that idea; `--all` -> every idea (re-check);
 default -> `python3 $SCRIPTS/ideas.py list EXP_DIR/ideas.json --unchecked`, skipping status `seed`.
 
-Spawn one `ai-scientist:novelty-checker` per idea in a single message (parallel). Pass SCRIPTS, EXP_DIR,
+Spawn one `ai-scientist:novelty-checker` per idea, with at most three checks running at a time. Pass SCRIPTS, EXP_DIR,
 IDEA_NAME and the template task_description from `EXP_DIR/template/prompt.json`.
 If S2_API_KEY is not set, mention once that Semantic Scholar may rate-limit and the search falls back to OpenAlex.
 Finish by printing `python3 $SCRIPTS/ideas.py list EXP_DIR/ideas.json`.

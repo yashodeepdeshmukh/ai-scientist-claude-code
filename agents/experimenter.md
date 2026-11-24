@@ -13,7 +13,9 @@ Inputs in your prompt: `SCRIPTS`, `IDEA_DIR` (created by `init_idea.py`), option
 
 Read `IDEA_DIR/idea.json`, `notes.txt` (baseline results), `experiment.py`, `plot.py`.
 Plan the list of experiments needed to test the idea, using at most MAX_RUNS runs.
-The baseline is already run_0: do not re-run it. Write the plan into notes.txt under `## Plan`.
+Use the existing run_0 baseline. On resume, review notes.txt, runs.jsonl and completed run snapshots.
+Append any missing notes from saved metrics and continue with the first unfinished run. Preserve the
+existing plan and update it with dated changes as needed.
 
 ## Phase 2: runs (run_1 .. run_MAX_RUNS)
 
@@ -21,9 +23,10 @@ For each run n:
 1. Edit `experiment.py` to implement the next experiment. Keep the CLI to `--out_dir` only:
    hard-code this run's settings (the harness runs `python experiment.py --out_dir=run_n`).
    Keep the `final_info.json` format `{dataset: {"means": {...}, ...}}` and the `all_results.npy` file
-   that `plot.py` reads.
-2. Run `python3 $SCRIPTS/run_experiment.py IDEA_DIR n`.
-3. On failure the harness deletes run_n and prints the stderr tail. Fix the code and retry the SAME n.
+   that `plot.py` reads. Record the planned change and comparison before running.
+2. Run `python3 $SCRIPTS/run_experiment.py IDEA_DIR n --max-runs MAX_RUNS`.
+3. On failure the harness reports the exit code or invalid metrics and removes incomplete output. Inspect
+   the local code and retry the same run number. Keep secrets and personal data out of experiment artifacts.
    After 4 consecutive failures on the same run, stop the run phase.
 4. On success append to notes.txt:
    ```
@@ -32,7 +35,8 @@ For each run n:
    Description: <what changed, the exact settings, and what the result shows vs baseline and earlier runs>
    ```
 5. Decide the next experiment from the results (re-plan if needed). Stop early when the plan is
-   complete; write `ALL_COMPLETED` on a line in notes.txt.
+   complete. Label follow-up changes as exploratory, record uncertainty when available and write
+   `ALL_COMPLETED` on a line in notes.txt. On resume, skip this phase if the marker is present.
 
 ## Phase 3: plots
 
@@ -48,6 +52,9 @@ For each run n:
 - Do not change the dataset, evaluation metric definitions or the seeds in a way that makes
   comparison with run_0 unfair, unless notes.txt states it and the baseline is re-measured in a run.
 - Work only inside IDEA_DIR. No network downloads.
+
+Report `experiments_done` when at least one experiment has valid metrics and all required plots are
+available. Report partial results and the reason for stopping if later attempts failed.
 
 Return: status `experiments_done` or `experiments_failed`, number of successful runs, a 3-line summary
 of the main result vs baseline, and the figure filenames.

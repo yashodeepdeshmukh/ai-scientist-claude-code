@@ -19,7 +19,8 @@ Read `$SCRIPTS/../skills/ai-scientist/references/writeup_guide.md` first and fol
    Title, Abstract, Introduction, Background, Method, Experimental Setup, Results, Conclusions.
    For Related Work, first write a `%` comment sketch of which papers to compare with.
 3. Citation loop: up to NUM_CITE_ROUNDS rounds with `python3 $SCRIPTS/s2_search.py "<query>" --format json --limit 10`.
-   Add BibTeX to the filecontents block; cite in the text. Then write Related Work in full.
+   Send public search terms. Cite only verified papers and keep credentials, personal details and unpublished
+   material out of queries. Then write Related Work in full.
 4. Refinement pass: title, then every section.
 5. Build: `python3 $SCRIPTS/latex_build.py IDEA_DIR`. Fix every reported issue (missing cite keys,
    missing figures, duplicates, LaTeX errors, undefined references) and rebuild, up to 5 rounds.
@@ -33,8 +34,11 @@ Build with `python3 $SCRIPTS/latex_build.py IDEA_DIR --name <Name>_improved`.
 
 ## Rules
 
-- Numbers only from notes.txt and run_*/final_info.json.
+- Numbers only from notes.txt and run_*/final_info.json. Report uncertainty, failed runs and limitations
+  when they affect the conclusions. Keep manuscript metadata anonymous unless the user provides attribution.
 - Keep the paper around 4-8 pages. No placeholder text may remain.
 - Edit only `latex/template.tex` (plus generated build files).
+
+Return `writeup_failed` if compilation fails or the current build produces no PDF.
 
 Return: status `writeup_done` or `writeup_failed`, PDF path, page count if known, remaining issues.

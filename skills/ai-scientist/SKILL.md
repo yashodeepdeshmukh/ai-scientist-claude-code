@@ -13,12 +13,6 @@ plumbing (search API, run harness, LaTeX checks, review aggregation).
 
 Scripts live in `<plugin root>/scripts/`. This skill's base directory is `<plugin root>/skills/ai-scientist`,
 so the scripts are at `../../scripts` relative to it. Commands pass the absolute path as `SCRIPTS=...`.
-If neither is available:
-
-```bash
-SCRIPTS=$(dirname "$(find ~/.claude/plugins ~/ai-scientist-plugin -name s2_search.py -path '*scripts*' 2>/dev/null | head -1)")
-```
-
 ## Pipeline (same order as launch_scientist.py)
 
 | Stage | Who | Reads | Writes |
@@ -37,7 +31,7 @@ SCRIPTS=$(dirname "$(find ~/.claude/plugins ~/ai-scientist-plugin -name s2_searc
 ai_scientist/<exp>/
   template/                 copy of the template; template/run_0 = baseline
   ideas.json                all ideas, with novel / novelty_reason / status fields
-  results/<YYYYmmdd_HHMMSS>_<Name>/
+  results/<YYYYmmdd_HHMMSS_microseconds>_<Name>/
     idea.json notes.txt experiment.py plot.py
     run_0/ run_1/ ... run_5/  run_<i>.py snapshots  runs.jsonl
     *.png  latex/template.tex  <Name>.pdf
@@ -72,10 +66,10 @@ Use `/ai-scientist:new-template` to wrap your own code.
 | Script | Purpose |
 |---|---|
 | `init_workspace.py <template> [--workspace DIR]` | copy template, run baseline run_0 + plot, print JSON paths |
-| `ideas.py validate|list|set` | validate schema, list (`--novel-only`, `--unchecked`), set a field |
+| `ideas.py validate|list|set|novelty|select` | validate schema, list (`--novel-only`, `--unchecked`), set a field |
 | `s2_search.py "query" [--limit 10] [--engine auto|semanticscholar|openalex] [--format text|json]` | literature search; JSON includes BibTeX |
 | `init_idea.py <exp_dir> <Name>` | create the idea folder, seed notes.txt, print the folder path |
-| `run_experiment.py <idea_dir> <n>` | run `experiment.py --out_dir=run_n` (n = 1..5), print means or stderr tail |
+| `run_experiment.py <idea_dir> <n>` | run `experiment.py --out_dir=run_n` (n = 1..5), print validated means or a failure summary |
 | `run_plot.py <idea_dir>` | run plot.py, list figures |
 | `latex_build.py <idea_dir> [--check-only]` | cite/figure/duplicate checks, chktex, pdflatex+bibtex, copy PDF |
 | `aggregate_reviews.py r1.json r2.json ... [--meta meta.json] [--out review.json]` | ensemble average |
@@ -90,8 +84,10 @@ Use `/ai-scientist:new-template` to wrap your own code.
 
 ## Safety
 
-The experimenter writes and executes code. Run inside a container, VM or throwaway WSL distro when possible,
-and do not put credentials in the workspace. `run_experiment.py` enforces a timeout but no sandbox.
+The experiment and plot runners use a temporary home and allowlist runtime environment variables.
+Child processes still have the operating-system access of the user running Claude Code. Run generated
+code inside an isolated environment when working with confidential data. Keep personal information
+and credentials out of templates, search queries and generated research artifacts.
 
 ## References
 

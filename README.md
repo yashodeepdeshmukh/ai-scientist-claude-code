@@ -52,9 +52,16 @@ Results land in `./ai_scientist/<template>/` in the current directory.
 - Review is done by Claude reading the PDF, not a hard-coded GPT-4o reviewer.
 - Defaults are smaller (3 ideas, not 50).
 
-## Safety
+## Resuming and handling research data
 
-As with the original, the experiment stage executes model-written code. Prefer a container, VM or
-throwaway WSL distro, and keep credentials out of the workspace.
+The full pipeline reuses the latest working folder for each selected idea. Completed runs keep their
+metrics and code snapshots. Use the stage commands to resume a write-up or review independently.
+`--skip-novelty-check` permits unchecked ideas while preserving existing verdicts.
+
+Experiment and plot subprocesses receive a temporary home and a limited environment. Their raw output
+is discarded to avoid copying sensitive values into logs. The subprocesses retain the current user's
+filesystem and network access. Use an isolated runtime for generated code or confidential data.
+Template copies exclude symlinks, Git metadata and common secret files. Keep proprietary details and
+personal information out of literature queries, which are sent to the selected search provider.
 
 License: Apache-2.0 (same as the original project, whose prompts and structure are adapted here).

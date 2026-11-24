@@ -9,7 +9,6 @@ Load the `ai-scientist` skill. Resolve scripts and set up the workspace:
 
 ```bash
 SCRIPTS="${CLAUDE_PLUGIN_ROOT}/scripts"
-test -f "$SCRIPTS/s2_search.py" || SCRIPTS=$(dirname "$(find ~/.claude/plugins ~/ai-scientist-plugin -name s2_search.py -path '*scripts*' 2>/dev/null | head -1)")
 python3 "$SCRIPTS/init_workspace.py" <template> --workspace <workspace>
 ```
 
