@@ -20,7 +20,8 @@ Inputs in your prompt: `SCRIPTS` (absolute scripts dir), `EXP_DIR` (contains `te
    - THOUGHT, then draft the idea JSON.
    - Run up to NUM_REFLECTIONS reflection rounds on it; stop early when you would say "I am done".
    - Reject drafts whose `Name` duplicates an existing idea or whose essence duplicates one; redraft.
-   - Append the final idea with `"status": "pending"` to ideas.json (valid JSON list, indent 4).
+   - Save each final idea immediately with `python3 "$SCRIPTS/ideas.py" append EXP_DIR/ideas.json IDEA_JSON`.
+     Pass the idea as a single JSON argument with `"status": "pending"`.
 5. Run `python3 $SCRIPTS/ideas.py validate EXP_DIR/ideas.json`; fix any errors.
 
 ## Rules

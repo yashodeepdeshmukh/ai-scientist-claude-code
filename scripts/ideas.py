@@ -109,6 +109,9 @@ def main():
     ls = sub.add_parser("list"); ls.add_argument("path")
     ls.add_argument("--novel-only", action="store_true"); ls.add_argument("--unchecked", action="store_true")
     s = sub.add_parser("set"); s.add_argument("path"); s.add_argument("name"); s.add_argument("field"); s.add_argument("value")
+    append = sub.add_parser("append")
+    append.add_argument("path")
+    append.add_argument("idea", type=json.loads)
     novelty = sub.add_parser("novelty")
     novelty.add_argument("path")
     novelty.add_argument("name")
@@ -127,6 +130,11 @@ def main():
         except json.JSONDecodeError:
             value = a.value
         update(a.path, a.name, {a.field: value})
+        return
+    if a.cmd == "append":
+        with locked(a.path):
+            ideas = load(a.path)
+            save(a.path, [*ideas, a.idea])
         return
     if a.cmd == "novelty":
         update(a.path, a.name, {"novel": a.verdict == "true", "novelty_reason": a.reason})

@@ -68,12 +68,23 @@ fresh one using `--workspace ai_scientist_verified`.
 
 ## Resuming and handling research data
 
-The full pipeline reuses the latest working folder for each selected idea. Completed runs keep their
-metrics and code snapshots. Run `/ai-scientist:scientist <template> --resume` to continue started ideas
-from their first unfinished stage. Repeat the original workspace and review options if customized.
-The review stage reuses validated reviewer files for the same PDF and retries missing or invalid files.
-Use the individual stage commands to work on a single idea.
-`--skip-novelty-check` permits unchecked ideas while preserving existing verdicts.
+Run `/ai-scientist:scientist --resume` from the project where you started. If several runs are
+pending, specify the template and original `--workspace`. The local SQLite research index keeps
+the original options, next stage, selected ideas, and stage outcomes. It links each workspace to its
+research activities while the workspace files hold the ideas, metrics, code snapshots, and papers.
+The review planner reuses validated reviewer files for the same PDF. For workspaces created before
+the index, use `/ai-scientist:scientist <template> --resume` with the original options once.
+
+The database is `research.sqlite3` under `${CLAUDE_CONFIG_DIR:-~/.claude}/ai-scientist/`. Set
+`AI_SCIENTIST_STATE_DIR` before starting Claude Code to change that directory. From a Bash command in the original
+project, run `python3 "$CLAUDE_PLUGIN_ROOT/scripts/research_state.py" status` to list saved runs or
+`history <exp-dir>` to see a workspace's activity history.
+
+Claude Code calls the `StopFailure` hook on a rate-limit error and the `SessionStart` hook when a
+session starts or resumes. The first marks the interruption. The second restores the checkpoint
+summary into Claude's context. Run the resume command after your usage is restored. Claude Code's
+documented hook events do not include a usage-reset notification, so the plugin waits for your next
+session or prompt. The current in-memory step may be repeated from its most recent saved artifact.
 
 Experiment and plot subprocesses receive a temporary home and a limited environment. Their raw output
 is discarded to avoid copying sensitive values into logs. The subprocesses retain the current user's

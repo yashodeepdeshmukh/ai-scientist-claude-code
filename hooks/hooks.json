@@ -1,0 +1,31 @@
+{
+  "description": "Restore AI Scientist research context and record rate-limit interruptions",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/resume_hook.py", "SessionStart"],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "rate_limit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/resume_hook.py"],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

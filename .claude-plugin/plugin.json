@@ -1,7 +1,7 @@
 {
   "name": "ai-scientist",
   "description": "Claude Code port of SakanaAI's AI-Scientist: idea generation, Semantic Scholar novelty check, automated experiments, LaTeX paper write-up and NeurIPS-style ensemble review, all driven by Claude subagents.",
-  "version": "0.4.0",
+  "version": "0.5.1",
   "homepage": "https://github.com/SakanaAI/AI-Scientist",
   "license": "Apache-2.0",
   "keywords": ["research", "ai-scientist", "experiments", "latex", "paper-review", "semantic-scholar"]
